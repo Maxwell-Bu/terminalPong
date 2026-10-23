@@ -6,6 +6,44 @@
 #include <conio.h>
 #include <vector>
 
+//DO TOMORROW:
+//Make Paddle class
+//Draw Paddles on screen
+//make Paddles respond to input
+
+class Paddle {
+private:
+	int center = 14;
+	int column;
+	std::vector<int> coords = {center - 2, center - 1, center, center + 1, center + 2}; 
+public:
+	Paddle(int c) : column(c) {
+	
+	}
+
+	std::vector<int> returnCoords() {
+		return coords;
+	}
+	int returnColumn() {
+		return column;
+	}
+
+	void moveUp() {
+		for (auto& coord : coords) {
+			coord -= 1;
+		}
+	}
+
+	void moveDown() {
+		for (auto& coord : coords) {
+			coord += 1;
+		}
+	}
+};
+
+auto pad1 = Paddle(4);
+auto pad2 = Paddle(55);
+
 //gameplay variables
 const int screen_width{80};
 const int screen_height{30};
@@ -53,6 +91,12 @@ void setConsoleSize(int width, int height) {
 
 void drawScreen(int width, int height) {
 
+	std::vector<int> pad1vec = pad1.returnCoords();
+	int pad1col = pad1.returnColumn();
+	
+	std::vector<int> pad2vec = pad2.returnCoords();
+	int pad2col = pad2.returnColumn();
+
 	std::string frame_buffer = "";
 	frame_buffer += "\n";
 	frame_buffer += "\033[1;1H";
@@ -63,12 +107,15 @@ void drawScreen(int width, int height) {
 				frame_buffer += "-";
 			} else if (x == 0 || x == width-1) {
 				frame_buffer += "|";
+			} else if (std::binary_search(pad1vec.begin(), pad1vec.end(), y) && x == pad1col) { 
+				frame_buffer += "#";
+			} else if (std::binary_search(pad2vec.begin(), pad2vec.end(), y) && x == pad2col) {
+				frame_buffer += "#";
 			} else {
 				frame_buffer += " ";
 			}
 		}
-
-	frame_buffer += "\n";
+		frame_buffer += "\n";
 		
 	}
 
@@ -93,6 +140,10 @@ int main() {
 
 			if (ch == 'x' || ch == 'X') {
 				running = false;
+			} else if (ch == 'w' || ch == 'W') {
+				pad1.moveUp();
+			} else if (ch == 'd' || ch == 'D') {
+				pad1.moveDown();
 			}
 		}
 
