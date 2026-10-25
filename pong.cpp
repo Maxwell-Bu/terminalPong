@@ -17,8 +17,9 @@ class Paddle {
 private:
 	int center = 14;
 	int column; 
+	std::vector<int> normal;
 public:
-	Paddle(int c) : column(c) {
+	Paddle(int c, std::vector<int> norm) : column(c), normal(norm) {
 	
 	}
 
@@ -37,9 +38,6 @@ public:
 		center += 1;
 	}
 };
-
-auto pad1 = Paddle(4);
-auto pad2 = Paddle(75);
 
 class Ball {
 private:
@@ -112,7 +110,7 @@ void setConsoleSize(int width, int height) {
 	SetConsoleWindowInfo(hOut, TRUE, &windowSize);
 }
 
-void drawScreen(int width, int height) {
+void drawScreen(int width, int height, auto& pad1, auto& pad2) {
 
 	int pad1center = pad1.returnCenter();
 	int pad1col = pad1.returnColumn();
@@ -150,6 +148,14 @@ void drawScreen(int width, int height) {
 	std::cout << frame_buffer << std::flush;
 }
 
+void collisionHandle() {
+
+}
+
+int vectorDot(std::vector<int> vec1, std::vector<int> vec2) {
+	return vec1.at(0) * vec2.at(0) + vec1.at(1) * vec2.at(1);
+}
+
 int main() {
 
 	setConsoleSize(screen_width, screen_height);
@@ -157,6 +163,12 @@ int main() {
 	enableANSI();
         std::cout << "\033[?25l" << std::flush;
 	enableRawMode();
+
+	std::vector<int> pad1norm = {1, 0};
+	std::vector<int> pad2norm = {-1, 0};
+
+	auto pad1 = Paddle(4, pad1norm);
+	auto pad2 = Paddle(75, pad2norm);
 
 	bool running = true;
 	while (running) {
@@ -177,7 +189,7 @@ int main() {
 
 		gameBall.movement();
 
-		drawScreen(screen_width, screen_height);
+		drawScreen(screen_width, screen_height, pad1, pad2);
 
 		auto frame_end = std::chrono::steady_clock::now();
 		auto frame_length = std::chrono::duration_cast<std::chrono::milliseconds>(frame_end - frame_start);
