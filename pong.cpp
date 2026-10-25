@@ -1,48 +1,71 @@
-#include <string>
+#include <string>	
 #include <iostream>
 #include <chrono>
 #include <thread>
 #include <windows.h>
 #include <conio.h>
 #include <vector>
+#include <algorithm>
+#include <functional>
 
 //DO TOMORROW:
-//Make Paddle class
-//Draw Paddles on screen
-//make Paddles respond to input
+//Make collision check/handle function
+//Allow ball to bounce
+//Think about 2nd paddle AI
 
 class Paddle {
 private:
 	int center = 14;
-	int column;
-	std::vector<int> coords = {center - 2, center - 1, center, center + 1, center + 2}; 
+	int column; 
 public:
 	Paddle(int c) : column(c) {
 	
 	}
 
-	std::vector<int> returnCoords() {
-		return coords;
+	int returnCenter() {
+		return center;
 	}
 	int returnColumn() {
 		return column;
 	}
 
 	void moveUp() {
-		for (auto& coord : coords) {
-			coord -= 1;
-		}
+		center -= 1;
 	}
 
 	void moveDown() {
-		for (auto& coord : coords) {
-			coord += 1;
-		}
+		center += 1;
 	}
 };
 
 auto pad1 = Paddle(4);
-auto pad2 = Paddle(55);
+auto pad2 = Paddle(75);
+
+class Ball {
+private:
+	char symbol = 'O';	
+
+	std::vector<int> pos = {40, 15};
+	std::vector<int> vel = {1, 1};
+public:
+	void movement() {
+		std::vector<int> result(pos.size());
+
+		std::transform(pos.begin(), pos.end(), vel.begin(), result.begin(), std::plus<int>());
+		pos = result;
+	}
+	
+	int returnXpos() {
+		return pos.front();
+	}
+	
+	int returnYpos() {
+		return pos.back();
+	}
+};
+		
+auto gameBall = Ball();
+
 
 //gameplay variables
 const int screen_width{80};
@@ -91,11 +114,14 @@ void setConsoleSize(int width, int height) {
 
 void drawScreen(int width, int height) {
 
-	std::vector<int> pad1vec = pad1.returnCoords();
+	int pad1center = pad1.returnCenter();
 	int pad1col = pad1.returnColumn();
 	
-	std::vector<int> pad2vec = pad2.returnCoords();
+	int pad2center = pad2.returnCenter();
 	int pad2col = pad2.returnColumn();
+
+	int ballX = gameBall.returnXpos();
+	int ballY = gameBall.returnYpos();
 
 	std::string frame_buffer = "";
 	frame_buffer += "\n";
@@ -107,10 +133,12 @@ void drawScreen(int width, int height) {
 				frame_buffer += "-";
 			} else if (x == 0 || x == width-1) {
 				frame_buffer += "|";
-			} else if (std::binary_search(pad1vec.begin(), pad1vec.end(), y) && x == pad1col) { 
+			} else if (y >= pad1center -2 && y <= pad1center + 2 && x == pad1col) { 
 				frame_buffer += "#";
-			} else if (std::binary_search(pad2vec.begin(), pad2vec.end(), y) && x == pad2col) {
+			} else if (y >= pad2center -2 && y <= pad2center + 2 && x == pad2col) {
 				frame_buffer += "#";
+			} else if (x == ballX && y == ballY) {
+				frame_buffer += "O";
 			} else {
 				frame_buffer += " ";
 			}
@@ -142,10 +170,12 @@ int main() {
 				running = false;
 			} else if (ch == 'w' || ch == 'W') {
 				pad1.moveUp();
-			} else if (ch == 'd' || ch == 'D') {
+			} else if (ch == 's' || ch == 'S') {
 				pad1.moveDown();
 			}
 		}
+
+		gameBall.movement();
 
 		drawScreen(screen_width, screen_height);
 
