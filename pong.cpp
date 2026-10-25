@@ -7,6 +7,7 @@
 #include <vector>
 #include <algorithm>
 #include <functional>
+#include <random>
 
 //DO TOMORROW:
 //Make collision check/handle function
@@ -44,13 +45,27 @@ private:
 	char symbol = 'O';	
 
 	std::vector<int> pos = {40, 15};
-	std::vector<int> vel = {1, 1};
+	std::vector<int> vel = {1, 0};
 public:
 	void movement() {
 		std::vector<int> result(pos.size());
 
 		std::transform(pos.begin(), pos.end(), vel.begin(), result.begin(), std::plus<int>());
 		pos = result;
+	}
+
+	void bouncedX(int rand) {
+		vel = {-1 * vel.at(0), rand};
+	}
+	
+	void bouncedTop() {
+		pos = {pos.at(0), 1};
+		vel = {vel.at(0), -1 * vel.at(1)};
+	}
+
+	void bouncedBottom() {
+		pos = {pos.at(0), 28};
+		vel = {vel.at(0), -1 * vel.at(1)};
 	}
 	
 	int returnXpos() {
@@ -61,9 +76,6 @@ public:
 		return pos.back();
 	}
 };
-		
-auto gameBall = Ball();
-
 
 //gameplay variables
 const int screen_width{80};
@@ -110,7 +122,7 @@ void setConsoleSize(int width, int height) {
 	SetConsoleWindowInfo(hOut, TRUE, &windowSize);
 }
 
-void drawScreen(int width, int height, auto& pad1, auto& pad2) {
+void drawScreen(int width, int height, auto& pad1, auto& pad2, auto& gameBall) {
 
 	int pad1center = pad1.returnCenter();
 	int pad1col = pad1.returnColumn();
@@ -148,12 +160,23 @@ void drawScreen(int width, int height, auto& pad1, auto& pad2) {
 	std::cout << frame_buffer << std::flush;
 }
 
-void collisionHandle() {
+void collisionHandle(int ballX, int ballY, int pad1col, int pad1center, int pad2col, int pad2center, auto& ball, int rand) {
 
-}
-
-int vectorDot(std::vector<int> vec1, std::vector<int> vec2) {
-	return vec1.at(0) * vec2.at(0) + vec1.at(1) * vec2.at(1);
+	if (ballX == pad1col +1) {
+		if (ballY >= pad1center -2 && ballY <= pad1center +2) {
+			ball.bouncedX(rand);
+		}
+	}
+	if (ballX == pad2col -1) {
+		if (ballY >= pad2center -2 && ballY <= pad2center +2) {
+			ball.bouncedX(rand);
+		}
+	}
+	if (ballY <= 1) {
+		ball.bouncedTop();
+	} else if (ballY >= 28) {
+		ball.bouncedBottom();
+	}
 }
 
 int main() {
@@ -169,6 +192,13 @@ int main() {
 
 	auto pad1 = Paddle(4, pad1norm);
 	auto pad2 = Paddle(75, pad2norm);
+
+	auto gameBall = Ball();
+
+	//RNG setup
+	std::random_device rd;
+	std::mt19937 gen(rd());
+	std::uniform_int_distribution<int> range(-2, 2);
 
 	bool running = true;
 	while (running) {
@@ -188,8 +218,9 @@ int main() {
 		}
 
 		gameBall.movement();
+		collisionHandle(gameBall.returnXpos(), gameBall.returnYpos(), pad1.returnColumn(), pad1.returnCenter(), pad2.returnColumn(), pad2.returnCenter(), gameBall, range(gen));
 
-		drawScreen(screen_width, screen_height, pad1, pad2);
+		drawScreen(screen_width, screen_height, pad1, pad2, gameBall);
 
 		auto frame_end = std::chrono::steady_clock::now();
 		auto frame_length = std::chrono::duration_cast<std::chrono::milliseconds>(frame_end - frame_start);
