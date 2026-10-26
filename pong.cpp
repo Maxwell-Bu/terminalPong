@@ -10,15 +10,15 @@
 #include <random>
 
 //DO TOMORROW:
-//Make collision check/handle function
-//Allow ball to bounce
-//Think about 2nd paddle AI
+//Make scoring system
+//make active/ inactive game states
 
 class Paddle {
 private:
 	int center = 14;
 	int column; 
 	std::vector<int> normal;
+	int AIcap = 0;
 public:
 	Paddle(int c, std::vector<int> norm) : column(c), normal(norm) {
 	
@@ -37,6 +37,17 @@ public:
 
 	void moveDown() {
 		center += 1;
+	}
+	
+	void AI(int ballY) {
+		AIcap += 1;
+		if (AIcap % 2 ==0) {
+			if (center < ballY) {
+				moveDown();
+			} else if (center > ballY) {
+				moveUp();
+			}
+		}
 	}
 };
 
@@ -75,12 +86,44 @@ public:
 	int returnYpos() {
 		return pos.back();
 	}
+
+	void scored() {
+		pos = {40, 15};
+		vel = {1, 0};
+	}
+};
+
+class Score {
+private:
+	std::vector<int> coords{};
+	int value = 0;
+public:
+	Score(int x, int y) : coords{x, y} {
+
+	}
+
+	int returnX() {
+		return coords.front();
+	}
+	
+	int returnY() {
+		return coords.back();
+	}
+
+	int returnV() {
+		return value;
+	}
+
+	void scored() {
+		value += 1;
+	}
+
 };
 
 //gameplay variables
 const int screen_width{80};
 const int screen_height{30};
-const int frame_rate{8};
+const int frame_rate{12};
 const std::chrono::milliseconds frame_duration(1000/ frame_rate);
 
 void enableANSI() {
@@ -122,7 +165,7 @@ void setConsoleSize(int width, int height) {
 	SetConsoleWindowInfo(hOut, TRUE, &windowSize);
 }
 
-void drawScreen(int width, int height, auto& pad1, auto& pad2, auto& gameBall) {
+void drawScreen(int width, int height, auto& pad1, auto& pad2, auto& gameBall, auto& p1score, auto& p2score) {
 
 	int pad1center = pad1.returnCenter();
 	int pad1col = pad1.returnColumn();
@@ -132,6 +175,13 @@ void drawScreen(int width, int height, auto& pad1, auto& pad2, auto& gameBall) {
 
 	int ballX = gameBall.returnXpos();
 	int ballY = gameBall.returnYpos();
+
+	int score1 = p1score.returnV();
+	int score2 = p2score.returnV();
+
+	int score1X = p1score.returnX();
+	int score2X = p2score.returnX();
+	int scoreY = 4;
 
 	std::string frame_buffer = "";
 	frame_buffer += "\n";
@@ -149,6 +199,10 @@ void drawScreen(int width, int height, auto& pad1, auto& pad2, auto& gameBall) {
 				frame_buffer += "#";
 			} else if (x == ballX && y == ballY) {
 				frame_buffer += "O";
+			} else if (y == scoreY && x == score1X) {
+				frame_buffer += score1;
+			} else if (y == scoreY && x == score2X) {
+				frame_buffer += score2;
 			} else {
 				frame_buffer += " ";
 			}
@@ -179,6 +233,16 @@ void collisionHandle(int ballX, int ballY, int pad1col, int pad1center, int pad2
 	}
 }
 
+void scored(auto& ball, auto& p1score, auto& p2score) {
+	if (ball.returnXpos() <= 1) {
+		p1score.scored();
+	} else if (ball.returnXpos() >= 79) {
+		p2score.scored();
+	}
+
+	ball.scored();
+}
+
 int main() {
 
 	setConsoleSize(screen_width, screen_height);
@@ -194,6 +258,9 @@ int main() {
 	auto pad2 = Paddle(75, pad2norm);
 
 	auto gameBall = Ball();
+
+	auto p1score = Score(14, 4);
+	auto p2score = Score(64, 4);
 
 	//RNG setup
 	std::random_device rd;
@@ -218,9 +285,14 @@ int main() {
 		}
 
 		gameBall.movement();
+		pad2.AI(gameBall.returnYpos());
 		collisionHandle(gameBall.returnXpos(), gameBall.returnYpos(), pad1.returnColumn(), pad1.returnCenter(), pad2.returnColumn(), pad2.returnCenter(), gameBall, range(gen));
 
-		drawScreen(screen_width, screen_height, pad1, pad2, gameBall);
+		if (gameBall.returnXpos() <=0 || gameBall.returnXpos() >= 79) {
+			scored(gameBall, p1score, p2score);
+		}	
+
+		drawScreen(screen_width, screen_height, pad1, pad2, gameBall, p1score, p2score);
 
 		auto frame_end = std::chrono::steady_clock::now();
 		auto frame_length = std::chrono::duration_cast<std::chrono::milliseconds>(frame_end - frame_start);
