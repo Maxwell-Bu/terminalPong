@@ -200,9 +200,9 @@ void drawScreen(int width, int height, auto& pad1, auto& pad2, auto& gameBall, a
 			} else if (x == ballX && y == ballY) {
 				frame_buffer += "O";
 			} else if (y == scoreY && x == score1X) {
-				frame_buffer += score1;
+				frame_buffer += std::to_string(score1);
 			} else if (y == scoreY && x == score2X) {
-				frame_buffer += score2;
+				frame_buffer += std::to_string(score2);
 			} else {
 				frame_buffer += " ";
 			}
@@ -235,9 +235,9 @@ void collisionHandle(int ballX, int ballY, int pad1col, int pad1center, int pad2
 
 void scored(auto& ball, auto& p1score, auto& p2score) {
 	if (ball.returnXpos() <= 1) {
-		p1score.scored();
-	} else if (ball.returnXpos() >= 79) {
 		p2score.scored();
+	} else if (ball.returnXpos() >= 79) {
+		p1score.scored();
 	}
 
 	ball.scored();
