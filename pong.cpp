@@ -311,23 +311,25 @@ int main() {
 	bool paused = true;
 	while (running) {
 		
-		while (paused) {
+		auto frame_start = std::chrono::steady_clock::now();
+		keyboardInput(pad1, paused, running);
+
+		if (paused) {
 			drawPausedScreen(screen_width, screen_height);
-			keyboardInput(pad1, paused, running);
 		}
 
-		auto frame_start = std::chrono::steady_clock::now();
+		if (!paused) {
 
-		keyboardInput(pad1, paused, running);
-		gameBall.movement();
-		pad2.AI(gameBall.returnYpos());
-		collisionHandle(gameBall.returnXpos(), gameBall.returnYpos(), pad1.returnColumn(), pad1.returnCenter(), pad2.returnColumn(), pad2.returnCenter(), gameBall, range(gen));
+			gameBall.movement();
+			pad2.AI(gameBall.returnYpos());
+			collisionHandle(gameBall.returnXpos(), gameBall.returnYpos(), pad1.returnColumn(), pad1.returnCenter(), pad2.returnColumn(), pad2.returnCenter(), gameBall, range(gen));
 
-		if (gameBall.returnXpos() <=0 || gameBall.returnXpos() >= 79) {
-			scored(gameBall, p1score, p2score);
-		}	
+			if (gameBall.returnXpos() <=0 || gameBall.returnXpos() >= 79) {
+				scored(gameBall, p1score, p2score);
+			}	
 
-		drawScreen(screen_width, screen_height, pad1, pad2, gameBall, p1score, p2score);
+			drawScreen(screen_width, screen_height, pad1, pad2, gameBall, p1score, p2score);
+		}
 
 		auto frame_end = std::chrono::steady_clock::now();
 		auto frame_length = std::chrono::duration_cast<std::chrono::milliseconds>(frame_end - frame_start);
