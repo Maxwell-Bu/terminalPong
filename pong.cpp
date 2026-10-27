@@ -32,11 +32,15 @@ public:
 	}
 
 	void moveUp() {
-		center -= 1;
+		if (center > 3 ) {
+			center -= 1;
+		}
 	}
 
 	void moveDown() {
-		center += 1;
+		if (center < 26) {
+			center += 1;
+		}
 	}
 	
 	void AI(int ballY) {
@@ -165,6 +169,27 @@ void setConsoleSize(int width, int height) {
 	SetConsoleWindowInfo(hOut, TRUE, &windowSize);
 }
 
+void drawPausedScreen(int width, int height) {
+	std::string frame_buffer = "";
+	frame_buffer += "\033[1;1H";
+
+	for (int y = 0; y < height; ++y) {
+		for (int x = 0; x < width; ++x) {
+			if (y == 0 || y == height -1) {
+				frame_buffer += "-";
+			} else if (x == 0 || x == width -1) {
+				frame_buffer += "|";
+			} else {
+				frame_buffer += " ";
+			}
+		}
+		frame_buffer += "\n";
+	}
+
+	std::cout << frame_buffer << std::flush;
+}
+
+
 void drawScreen(int width, int height, auto& pad1, auto& pad2, auto& gameBall, auto& p1score, auto& p2score) {
 
 	int pad1center = pad1.returnCenter();
@@ -184,7 +209,6 @@ void drawScreen(int width, int height, auto& pad1, auto& pad2, auto& gameBall, a
 	int scoreY = 4;
 
 	std::string frame_buffer = "";
-	frame_buffer += "\n";
 	frame_buffer += "\033[1;1H";
 
 	for (int y = 0; y < height; ++y) {
@@ -243,6 +267,22 @@ void scored(auto& ball, auto& p1score, auto& p2score) {
 	ball.scored();
 }
 
+void keyboardInput(auto& pad1, bool& pauseState, bool& gameState) {
+	if (_kbhit()) {
+                char ch = _getch();
+
+                if (ch == 'x' || ch == 'X') {
+                	gameState = false;
+                } else if (ch == 'w' || ch == 'W') {
+                	pad1.moveUp();
+                } else if (ch == 's' || ch == 'S') {
+                	pad1.moveDown();
+        	} else if (ch == 'p' || ch == 'P') {
+			pauseState = !pauseState;
+		}
+	}
+}
+
 int main() {
 
 	setConsoleSize(screen_width, screen_height);
@@ -268,22 +308,17 @@ int main() {
 	std::uniform_int_distribution<int> range(-2, 2);
 
 	bool running = true;
+	bool paused = true;
 	while (running) {
+		
+		while (paused) {
+			drawPausedScreen(screen_width, screen_height);
+			keyboardInput(pad1, paused, running);
+		}
 
 		auto frame_start = std::chrono::steady_clock::now();
 
-		if (_kbhit()) {
-			char ch = _getch();
-
-			if (ch == 'x' || ch == 'X') {
-				running = false;
-			} else if (ch == 'w' || ch == 'W') {
-				pad1.moveUp();
-			} else if (ch == 's' || ch == 'S') {
-				pad1.moveDown();
-			}
-		}
-
+		keyboardInput(pad1, paused, running);
 		gameBall.movement();
 		pad2.AI(gameBall.returnYpos());
 		collisionHandle(gameBall.returnXpos(), gameBall.returnYpos(), pad1.returnColumn(), pad1.returnCenter(), pad2.returnColumn(), pad2.returnCenter(), gameBall, range(gen));
